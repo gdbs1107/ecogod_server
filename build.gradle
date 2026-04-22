@@ -1,86 +1,54 @@
 plugins {
-    id 'java'
-    id 'org.springframework.boot' version '4.0.2'
-    id 'io.spring.dependency-management' version '1.1.7'
-    id 'com.google.cloud.tools.jib' version '3.5.3'
+    id 'org.springframework.boot' apply false
+    id 'io.spring.dependency-management' apply false
+    id 'com.google.cloud.tools.jib' apply false
 }
 
 group = 'or.ecogad'
 version = '0.0.1-SNAPSHOT'
 description = 'ecogad'
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+allprojects {
+    group = rootProject.group
+    version = rootProject.version
+
+    repositories {
+        mavenCentral()
     }
 }
 
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
-    }
-}
+subprojects {
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'java'
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-mail'
-    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1'
-    compileOnly 'org.projectlombok:lombok'
-    runtimeOnly 'com.mysql:mysql-connector-j'
-    annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-    testRuntimeOnly 'com.h2database:h2'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-tasks.named('test') {
-    useJUnitPlatform()
-}
-
-jib {
-    from {
-        image = 'eclipse-temurin:17-jre'
-    }
-
-    container {
-        mainClass = 'or.ecogad.ecogad.EcogadApplication'
-        ports = ['8080']
-        user = '1000:1000'
-        workingDirectory = '/tmp'
-    }
-}
-
-tasks.register('verifyApplicationDevYml') {
-    dependsOn tasks.named('processResources')
-
-    doLast {
-        boolean isCi = (System.getenv('CI') ?: '').toBoolean()
-
-        File source = file('src/main/resources/application-dev.yml')
-        File processed = layout.buildDirectory.file('resources/main/application-dev.yml').get().asFile
-
-        if (!source.exists()) {
-            if (isCi) {
-                throw new GradleException('[ERROR] application-dev.yml이 생성되지 않았습니다. (CI secret 주입/생성 로직 확인)')
-            }
-            logger.lifecycle('[WARN] application-dev.yml이 없어 검증을 스킵합니다. (CI 환경에서는 필수)')
-            return
-        }
-
-        if (!processed.exists()) {
-            throw new GradleException('[ERROR] application-dev.yml이 빌드 산출물에 포함되지 않았습니다. (processResources 설정 확인)')
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
         }
     }
-}
 
-tasks.named('jib') {
-    dependsOn tasks.named('verifyApplicationDevYml')
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
+    dependencies {
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+
+        testCompileOnly 'org.projectlombok:lombok'
+        testAnnotationProcessor 'org.projectlombok:lombok'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform()
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom 'org.springframework.boot:spring-boot-dependencies:4.0.2'
+        }
+    }
 }

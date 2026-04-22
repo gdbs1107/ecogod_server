@@ -1,1 +1,15 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+    plugins {
+        id 'org.springframework.boot' version '4.0.2'
+        id 'io.spring.dependency-management' version '1.1.7'
+        id 'com.google.cloud.tools.jib' version '3.5.3'
+    }
+}
+
 rootProject.name = 'ecogad'
+
+include 'ecogad-api', 'ecogad-domain', 'ecogad-infra', 'ecogad-common', 'ecogad-auth', 'ecogad-external'
