@@ -21,3 +21,15 @@ app:
   mail:
     from: no-reply@ecogad.com
     inquiry-to: admin@ecogad.com
+  cors:
+    allowed-origins: http://localhost:5173,http://127.0.0.1:5173
+  auth:
+    jwt:
+      header: Authorization
+      secret: test-ecogad-admin-jwt-secret-key-2026-secure
+      access-token-validity-in-seconds: 3600
+
+management:
+  health:
+    mail:
+      enabled: false
