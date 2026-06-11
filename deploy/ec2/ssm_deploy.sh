@@ -43,7 +43,11 @@ ensure_dependencies() {
     echo "[INFO] Installing awscli"
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
-    apt-get install -y awscli
+    apt-get install -y curl unzip
+    curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+    rm -rf /tmp/aws
+    unzip -q /tmp/awscliv2.zip -d /tmp
+    /tmp/aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
   fi
 }
 
