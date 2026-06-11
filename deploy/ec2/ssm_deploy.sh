@@ -39,15 +39,40 @@ exec 200>"${LOCK_FILE}"
 flock -n 200 || { echo "[ERROR] Another deployment is running"; exit 1; }
 
 ensure_dependencies() {
-  if ! command -v aws >/dev/null 2>&1; then
-    echo "[INFO] Installing awscli"
+  if ! command -v curl >/dev/null 2>&1 || ! command -v unzip >/dev/null 2>&1 || ! command -v fuser >/dev/null 2>&1; then
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
-    apt-get install -y curl unzip
+    apt-get install -y curl unzip psmisc
+  fi
+
+  if ! command -v aws >/dev/null 2>&1; then
+    echo "[INFO] Installing awscli"
     curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
     rm -rf /tmp/aws
     unzip -q /tmp/awscliv2.zip -d /tmp
     /tmp/aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
+  fi
+}
+
+cleanup_port_8080() {
+  echo "[INFO] Cleanup listeners on 127.0.0.1:8080"
+
+  docker ps --filter publish=8080 --format '{{.ID}}' | while read -r container_id; do
+    if [[ -n "${container_id}" ]]; then
+      docker rm -f "${container_id}" >/dev/null 2>&1 || true
+    fi
+  done
+
+  if command -v fuser >/dev/null 2>&1; then
+    fuser -k 8080/tcp >/dev/null 2>&1 || true
+  fi
+
+  pkill -f 'ecogod-api-.*\.jar' >/dev/null 2>&1 || true
+
+  if ss -ltn "( sport = :8080 )" | grep -q ':8080'; then
+    echo "[ERROR] Port 8080 is still in use after cleanup"
+    ss -ltnp "( sport = :8080 )" || true
+    return 1
   fi
 }
 
@@ -157,7 +182,7 @@ echo "[INFO] Pull image: ${IMAGE}"
 docker pull "${IMAGE}"
 
 echo "[INFO] Stop legacy jar process if exists"
-pkill -f 'ecogod-api-.*\.jar' >/dev/null 2>&1 || true
+cleanup_port_8080
 
 CURRENT_IMAGE=""
 if docker ps -a --format '{{.Names}}' | grep -qx "${APP_NAME}-api"; then
