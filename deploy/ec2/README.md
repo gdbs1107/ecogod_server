@@ -8,21 +8,21 @@ sudo apt-get update
 sudo apt-get install -y nginx
 ```
 
-2. 업스트림 파일 생성 (`/etc/nginx/conf.d/ecogad-upstream.conf`)
+2. 업스트림 파일 생성 (`/etc/nginx/conf.d/ecogod-upstream.conf`)
 ```nginx
-upstream ecogad_backend {
+upstream ecogod_backend {
     server 127.0.0.1:8080;
 }
 ```
 
-3. 서버 블록 예시 (`/etc/nginx/sites-available/ecogad`)
+3. 서버 블록 예시 (`/etc/nginx/sites-available/ecogod`)
 ```nginx
 server {
     listen 80;
     server_name _;
 
     location / {
-        proxy_pass http://ecogad_backend;
+        proxy_pass http://ecogod_backend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -33,7 +33,7 @@ server {
 
 4. Nginx 적용
 ```bash
-sudo ln -sf /etc/nginx/sites-available/ecogad /etc/nginx/sites-enabled/ecogad
+sudo ln -sf /etc/nginx/sites-available/ecogod /etc/nginx/sites-enabled/ecogod
 sudo nginx -t
 sudo systemctl restart nginx
 ```
@@ -42,7 +42,7 @@ sudo systemctl restart nginx
 
 - `DOCKERHUB_USERNAME`
 - `DOCKERHUB_TOKEN`
-- `DOCKERHUB_REPO` (예: `username/ecogad`, Docker Hub 저장소)
+- `DOCKERHUB_REPO` (예: `username/ecogod`, Docker Hub 저장소)
 - `EC2_HOST`
 - `EC2_USER` (예: `ubuntu`)
 - `EC2_SSH_KEY`

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_NAME="${APP_NAME:-ecogad}"
+APP_NAME="${APP_NAME:-ecogod}"
 DOCKER_REPO="${DOCKER_REPO:?DOCKER_REPO is required}"
 IMAGE_TAG="${IMAGE_TAG:?IMAGE_TAG is required}"
 IMAGE="${DOCKER_REPO}:${IMAGE_TAG}"
@@ -14,8 +14,8 @@ exec 200>"${LOCK_FILE}"
 flock -n 200 || { echo "[ERROR] Another deployment is running"; exit 1; }
 
 SPRING_PROFILE="${SPRING_PROFILES_ACTIVE:-dev}"
-STATE_FILE="${STATE_FILE:-/opt/ecogad/active_color}"
-NETWORK_NAME="${NETWORK_NAME:-ecogad-net}"
+STATE_FILE="${STATE_FILE:-/opt/ecogod/active_color}"
+NETWORK_NAME="${NETWORK_NAME:-ecogod-net}"
 
 BLUE_PORT="${BLUE_PORT:-8080}"
 GREEN_PORT="${GREEN_PORT:-8081}"
@@ -26,7 +26,7 @@ HEALTH_REQUEST_TIMEOUT_SECONDS="${HEALTH_REQUEST_TIMEOUT_SECONDS:-5}"
 HEALTH_CONNECT_TIMEOUT_SECONDS="${HEALTH_CONNECT_TIMEOUT_SECONDS:-3}"
 HEALTH_RETRY_SLEEP_SECONDS="${HEALTH_RETRY_SLEEP_SECONDS:-2}"
 
-NGINX_UPSTREAM_FILE="${NGINX_UPSTREAM_FILE:-/etc/nginx/conf.d/ecogad-upstream.conf}"
+NGINX_UPSTREAM_FILE="${NGINX_UPSTREAM_FILE:-/etc/nginx/conf.d/ecogod-upstream.conf}"
 
 mkdir -p "$(dirname "${STATE_FILE}")"
 
@@ -96,7 +96,7 @@ while true; do
 done
 
 cat > "${NGINX_UPSTREAM_FILE}" <<UPSTREAM
-upstream ecogad_backend {
+upstream ecogod_backend {
     server 127.0.0.1:${NEXT_PORT};
 }
 UPSTREAM

@@ -10,6 +10,6 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'ecogad'
+rootProject.name = 'ecogod'
 
-include 'ecogad-api', 'ecogad-domain', 'ecogad-infra', 'ecogad-common', 'ecogad-auth', 'ecogad-external'
+include 'ecogod-api', 'ecogod-domain', 'ecogod-infra', 'ecogod-common', 'ecogod-auth', 'ecogod-external'

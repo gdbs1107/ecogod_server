@@ -4,9 +4,9 @@ plugins {
     id 'com.google.cloud.tools.jib' apply false
 }
 
-group = 'or.ecogad'
+group = 'or.ecogod'
 version = '0.0.1-SNAPSHOT'
-description = 'ecogad'
+description = 'ecogod'
 
 allprojects {
     group = rootProject.group
