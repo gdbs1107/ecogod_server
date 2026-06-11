@@ -2,7 +2,7 @@ name: develop-cd
 
 on:
   push:
-    branches: ["main"]
+    branches: ["develop"]
 
 concurrency:
   group: develop-cd-${{ github.ref }}
@@ -19,13 +19,6 @@ jobs:
       - name: 코드 가져오기
         uses: actions/checkout@v4
 
-      - name: 민감 파일 추적 금지 검증
-        run: |
-          if git ls-files --error-unmatch src/main/resources/application-dev.yml >/dev/null 2>&1; then
-            echo "[ERROR] src/main/resources/application-dev.yml must not be tracked in git."
-            exit 1
-          fi
-
       - name: JDK 17 설치
         uses: actions/setup-java@v4
         with:
@@ -38,31 +31,17 @@ jobs:
       - name: gradlew 권한 설정
         run: chmod +x gradlew
 
-      - name: application-dev.yml 생성
-        env:
-          APPLICATION_DEV: ${{ secrets.APPLICATION_DEV }}
-        run: |
-          FILE=src/main/resources/application-dev.yml
-          rm -f "$FILE"
-          printf '%s\n' "$APPLICATION_DEV" > "$FILE"
-
-          if grep -Eq '^[[:space:]]*on-profile:[[:space:]]*local' "$FILE"; then
-            echo "[WARN] application-dev.yml의 on-profile: local 을 dev로 보정합니다."
-            perl -0pi -e 's/on-profile:\s*local/on-profile: dev/g' "$FILE"
-          fi
-
-      - name: dev 설정 필수값 검증
-        run: |
-          FILE=src/main/resources/application-dev.yml
-          grep -Eq '^spring:' "$FILE" || { echo "[ERROR] spring 루트가 없습니다."; exit 1; }
-          grep -Eq '^[[:space:]]*datasource:' "$FILE" || { echo "[ERROR] spring.datasource 블록이 없습니다."; exit 1; }
-          grep -Eq '^[[:space:]]*url:[[:space:]]*jdbc:' "$FILE" || { echo "[ERROR] spring.datasource.url이 jdbc 형식이 아닙니다."; exit 1; }
-          grep -Eq '^[[:space:]]*username:[[:space:]]*[^[:space:]].*' "$FILE" || { echo "[ERROR] spring.datasource.username이 비어 있습니다."; exit 1; }
-          grep -Eq '^[[:space:]]*password:[[:space:]]*[^[:space:]].*' "$FILE" || { echo "[ERROR] spring.datasource.password가 비어 있습니다."; exit 1; }
-          ! grep -Eq '^[[:space:]]*on-profile:[[:space:]]*local' "$FILE" || { echo "[ERROR] on-profile: local 이 남아 있습니다."; exit 1; }
+      - name: 테스트 실행
+        run: ./gradlew test --no-daemon
 
       - name: 배포 스크립트 문법 검증
-        run: bash -n deploy/ec2/blue_green_deploy.sh
+        run: bash -n deploy/ec2/ssm_deploy.sh
+
+      - name: Docker Hub 로그인
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Jib 이미지 빌드 및 푸시
         env:
@@ -71,40 +50,94 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
-          ./gradlew jib -x test --no-daemon --build-cache \
+          ./gradlew :ecogad-api:jib -x test --no-daemon --build-cache \
             -Djib.from.auth.username="${DOCKER_USERNAME}" \
             -Djib.from.auth.password="${DOCKER_PASSWORD}" \
             -Djib.to.image="${DOCKER_REPO}" \
-            -Djib.to.tags="${IMAGE_SHA},main-latest" \
+            -Djib.to.tags="${IMAGE_SHA},develop-latest" \
             -Djib.to.auth.username="${DOCKER_USERNAME}" \
             -Djib.to.auth.password="${DOCKER_PASSWORD}"
 
-      - name: 배포 스크립트 전송
-        uses: appleboy/scp-action@v0.1.7
+      - name: AWS 자격 증명 설정
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          port: 2222
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: deploy/ec2/blue_green_deploy.sh
-          target: /tmp
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: EC2 Blue/Green 배포
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          port: 2222
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script_stop: true
-          script: |
-            sed -i 's/\r$//' /tmp/deploy/ec2/blue_green_deploy.sh
-            chmod +x /tmp/deploy/ec2/blue_green_deploy.sh
-            export APP_NAME="ecogad"
-            export DOCKER_REPO="${{ secrets.DOCKERHUB_REPO }}"
-            export IMAGE_TAG="${{ github.sha }}"
-            export DOCKER_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
-            export DOCKER_PASSWORD="${{ secrets.DOCKERHUB_TOKEN }}"
-            export SPRING_PROFILES_ACTIVE="dev"
-            export HEALTH_PATH="/actuator/health"
-            sudo -E /tmp/deploy/ec2/blue_green_deploy.sh
+      - name: SSM 배포 명령 전송
+        id: send-command
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+          DOCKER_REPO: ${{ secrets.DOCKERHUB_REPO }}
+          DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          SCRIPT_B64="$(base64 -w 0 deploy/ec2/ssm_deploy.sh)"
+
+          cat > ssm-commands.json <<EOF
+          {
+            "commands": [
+              "mkdir -p /opt/ecogod",
+              "echo ${SCRIPT_B64} | base64 -d > /opt/ecogod/deploy.sh",
+              "chmod +x /opt/ecogod/deploy.sh",
+              "APP_NAME=ecogod AWS_REGION=${AWS_REGION} DOCKER_REPO=${DOCKER_REPO} IMAGE_TAG=${IMAGE_TAG} DOCKER_USERNAME=${DOCKER_USERNAME} DOCKER_PASSWORD=${DOCKER_PASSWORD} /opt/ecogod/deploy.sh"
+            ]
+          }
+          EOF
+
+          COMMAND_ID="$(aws ssm send-command \
+            --instance-ids "${EC2_INSTANCE_ID}" \
+            --document-name "AWS-RunShellScript" \
+            --comment "ecogod develop deploy ${GITHUB_SHA}" \
+            --parameters file://ssm-commands.json \
+            --query 'Command.CommandId' \
+            --output text)"
+
+          echo "command_id=${COMMAND_ID}" >> "${GITHUB_OUTPUT}"
+
+      - name: SSM 배포 완료 대기
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+          COMMAND_ID: ${{ steps.send-command.outputs.command_id }}
+        run: |
+          for attempt in $(seq 1 60); do
+            STATUS="$(aws ssm get-command-invocation \
+              --command-id "${COMMAND_ID}" \
+              --instance-id "${EC2_INSTANCE_ID}" \
+              --query 'Status' \
+              --output text)"
+
+            echo "Attempt ${attempt}: ${STATUS}"
+
+            case "${STATUS}" in
+              Success)
+                exit 0
+                ;;
+              Cancelled|Cancelling|TimedOut|Failed)
+                aws ssm get-command-invocation \
+                  --command-id "${COMMAND_ID}" \
+                  --instance-id "${EC2_INSTANCE_ID}" \
+                  --query '{Status:Status,StdOut:StandardOutputContent,StdErr:StandardErrorContent}' \
+                  --output json
+                exit 1
+                ;;
+            esac
+
+            sleep 10
+          done
+
+          echo "[ERROR] SSM 배포 대기 시간이 초과되었습니다."
+          aws ssm get-command-invocation \
+            --command-id "${COMMAND_ID}" \
+            --instance-id "${EC2_INSTANCE_ID}" \
+            --query '{Status:Status,StdOut:StandardOutputContent,StdErr:StandardErrorContent}' \
+            --output json
+          exit 1
+
+      - name: 외부 헬스체크
+        run: |
+          curl -fsS --retry 12 --retry-delay 5 https://api.ecogod.kr/actuator/health
