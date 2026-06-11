@@ -38,6 +38,15 @@ mkdir -p "$(dirname "${LOCK_FILE}")" "${RUNTIME_DIR}"
 exec 200>"${LOCK_FILE}"
 flock -n 200 || { echo "[ERROR] Another deployment is running"; exit 1; }
 
+ensure_dependencies() {
+  if ! command -v aws >/dev/null 2>&1; then
+    echo "[INFO] Installing awscli"
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+    apt-get install -y awscli
+  fi
+}
+
 get_ssm_parameter() {
   local name="$1"
   local decrypt="${2:-false}"
@@ -120,6 +129,8 @@ rollback() {
 
   wait_for_health
 }
+
+ensure_dependencies
 
 LOCAL_DB_HOST="$(get_ssm_parameter "${DB_HOST_PARAM}")"
 LOCAL_DB_NAME="$(get_ssm_parameter "${DB_NAME_PARAM}")"
