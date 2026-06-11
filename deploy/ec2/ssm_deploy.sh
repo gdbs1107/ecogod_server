@@ -156,6 +156,9 @@ docker_login
 echo "[INFO] Pull image: ${IMAGE}"
 docker pull "${IMAGE}"
 
+echo "[INFO] Stop legacy jar process if exists"
+pkill -f 'ecogod-api-.*\.jar' >/dev/null 2>&1 || true
+
 CURRENT_IMAGE=""
 if docker ps -a --format '{{.Names}}' | grep -qx "${APP_NAME}-api"; then
   CURRENT_IMAGE="$(docker inspect --format='{{.Config.Image}}' "${APP_NAME}-api" 2>/dev/null || true)"
