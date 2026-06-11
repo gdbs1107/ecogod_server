@@ -23,7 +23,7 @@
 - GitHub Actions
   - `develop` push 트리거
   - `test`
-  - `:ecogad-api:jib`
+- `:ecogod-api:jib`
   - `aws ssm send-command`
 - EC2
   - `Caddy -> 127.0.0.1:8080`

@@ -50,7 +50,7 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
-          ./gradlew :ecogad-api:jib -x test --no-daemon --build-cache \
+          ./gradlew :ecogod-api:jib -x test --no-daemon --build-cache \
             -Djib.from.auth.username="${DOCKER_USERNAME}" \
             -Djib.from.auth.password="${DOCKER_PASSWORD}" \
             -Djib.to.image="${DOCKER_REPO}" \
