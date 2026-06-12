@@ -1,7 +1,6 @@
 package or.ecogod.ecogod.domain.notice.application.service;
 
 import or.ecogod.ecogod.common.exception.CustomException;
-import or.ecogod.ecogod.domain.notice.application.command.NoticeCreateCommand;
 import or.ecogod.ecogod.domain.notice.domain.model.Notice;
 import or.ecogod.ecogod.domain.notice.repository.NoticeRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -31,17 +30,16 @@ class AdminNoticeServiceTest {
     @DisplayName("createNotice()는 공지사항을 성공적으로 등록한다")
     void createNotice_success() {
         // given
-        NoticeCreateCommand command = new NoticeCreateCommand(
-                "시스템 점검 공지",
-                "점검이 예정되어 있습니다.",
-                true
-        );
-
         when(noticeRepository.existsByTitle("시스템 점검 공지")).thenReturn(false);
         when(noticeRepository.save(any(Notice.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        adminNoticeService.createNotice(command);
+        adminNoticeService.createNotice(
+                "시스템 점검 공지",
+                "정기 점검 안내",
+                "점검이 예정되어 있습니다.",
+                true
+        );
 
         // then
         verify(noticeRepository, times(1)).save(any(Notice.class));
@@ -51,16 +49,18 @@ class AdminNoticeServiceTest {
     @DisplayName("createNotice()는 제목이 중복되면 예외를 발생시킨다")
     void createNotice_duplicate_throwsException() {
         // given
-        NoticeCreateCommand command = new NoticeCreateCommand(
-                "시스템 점검 공지",
-                "점검이 예정되어 있습니다.",
-                false
-        );
-
         when(noticeRepository.existsByTitle("시스템 점검 공지")).thenReturn(true);
 
         // when // then
-        assertThrows(CustomException.class, () -> adminNoticeService.createNotice(command));
+        assertThrows(
+                CustomException.class,
+                () -> adminNoticeService.createNotice(
+                        "시스템 점검 공지",
+                        "정기 점검 안내",
+                        "점검이 예정되어 있습니다.",
+                        false
+                )
+        );
         verify(noticeRepository, never()).save(any(Notice.class));
     }
 }

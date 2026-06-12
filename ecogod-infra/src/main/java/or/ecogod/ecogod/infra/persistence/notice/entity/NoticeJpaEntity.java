@@ -28,6 +28,9 @@ public class NoticeJpaEntity extends BaseJpaEntity {
     @Column(nullable = false, length = 200)
     private String title;
 
+    @Column(nullable = false, length = 255)
+    private String summary;
+
     @Lob
     @Column(nullable = false)
     private String content;
@@ -38,9 +41,10 @@ public class NoticeJpaEntity extends BaseJpaEntity {
     private LocalDateTime publishedAt;
 
     @Builder(toBuilder = true)
-    private NoticeJpaEntity(Long id, String title, String content, boolean published, LocalDateTime publishedAt) {
+    private NoticeJpaEntity(Long id, String title, String summary, String content, boolean published, LocalDateTime publishedAt) {
         this.id = id;
         this.title = title;
+        this.summary = summary;
         this.content = content;
         this.published = published;
         this.publishedAt = publishedAt;

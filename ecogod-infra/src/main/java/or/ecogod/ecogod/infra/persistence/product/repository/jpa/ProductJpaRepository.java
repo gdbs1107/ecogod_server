@@ -1,9 +1,18 @@
 package or.ecogod.ecogod.infra.persistence.product.repository.jpa;
 
-import or.ecogod.ecogod.domain.product.domain.model.ProductCategory;
 import or.ecogod.ecogod.infra.persistence.product.entity.ProductJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface ProductJpaRepository extends JpaRepository<ProductJpaEntity, Long> {
-    boolean existsByCategoryAndName(ProductCategory category, String name);
+    boolean existsByCategoryIdAndNameIgnoreCase(Long categoryId, String name);
+
+    boolean existsByCategoryIdAndNameIgnoreCaseAndIdNot(Long categoryId, String name, Long id);
+
+    boolean existsByCategoryId(Long categoryId);
+
+    List<ProductJpaEntity> findAllByOrderByUpdatedAtDesc();
+
+    List<ProductJpaEntity> findByPublishedTrueAndCategory_SlugOrderByUpdatedAtDesc(String categorySlug);
 }

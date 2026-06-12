@@ -30,10 +30,10 @@ public class Product {
     ) {
         this.id = id;
         this.category = category;
-        this.name = name;
-        this.summary = summary;
-        this.description = description;
-        this.thumbnailUrl = thumbnailUrl;
+        this.name = normalizeText(name);
+        this.summary = normalizeNullable(summary);
+        this.description = normalizeNullable(description);
+        this.thumbnailUrl = normalizeNullable(thumbnailUrl);
         this.published = published;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -62,5 +62,25 @@ public class Product {
             LocalDateTime updatedAt
     ) {
         return new Product(id, category, name, summary, description, thumbnailUrl, published, createdAt, updatedAt);
+    }
+
+    public Product update(
+            ProductCategory category,
+            String name,
+            String summary,
+            String description,
+            String thumbnailUrl,
+            boolean published
+    ) {
+        return new Product(id, category, name, summary, description, thumbnailUrl, published, createdAt, updatedAt);
+    }
+
+    private static String normalizeText(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private static String normalizeNullable(String value) {
+        String normalized = normalizeText(value);
+        return normalized.isBlank() ? null : normalized;
     }
 }

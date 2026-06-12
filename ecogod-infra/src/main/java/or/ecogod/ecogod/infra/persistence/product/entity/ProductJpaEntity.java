@@ -2,19 +2,20 @@ package or.ecogod.ecogod.infra.persistence.product.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import or.ecogod.ecogod.domain.product.domain.model.ProductCategory;
 import or.ecogod.ecogod.infra.persistence.base.BaseJpaEntity;
+import or.ecogod.ecogod.infra.persistence.productcategory.entity.ProductCategoryJpaEntity;
 
 @Entity
 @Getter
@@ -26,9 +27,9 @@ public class ProductJpaEntity extends BaseJpaEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 40)
-    private ProductCategory category;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "category_id", nullable = false)
+    private ProductCategoryJpaEntity category;
 
     @Column(nullable = false, length = 150)
     private String name;
@@ -48,7 +49,7 @@ public class ProductJpaEntity extends BaseJpaEntity {
     @Builder(toBuilder = true)
     private ProductJpaEntity(
             Long id,
-            ProductCategory category,
+            ProductCategoryJpaEntity category,
             String name,
             String summary,
             String description,
