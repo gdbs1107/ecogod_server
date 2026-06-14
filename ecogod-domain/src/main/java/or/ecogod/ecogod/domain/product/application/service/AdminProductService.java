@@ -5,6 +5,7 @@ import or.ecogod.ecogod.common.exception.CustomException;
 import or.ecogod.ecogod.common.exception.ErrorCode;
 import or.ecogod.ecogod.domain.product.domain.model.Product;
 import or.ecogod.ecogod.domain.product.domain.model.ProductCategory;
+import or.ecogod.ecogod.domain.product.domain.model.ProductDetailImage;
 import or.ecogod.ecogod.domain.product.repository.ProductCategoryRepository;
 import or.ecogod.ecogod.domain.product.repository.ProductRepository;
 import org.springframework.stereotype.Service;
@@ -30,22 +31,27 @@ public class AdminProductService {
     }
 
     @Transactional
-    public Product createProduct(String categoryCode, String name, String summary, String description, String thumbnailUrl, boolean published) {
+    public Product createProduct(String categoryCode, String name, String summary, String description, String thumbnailUrl, List<ProductDetailImage> detailImages, boolean published) {
         ProductCategory category = getCategoryByCode(categoryCode);
         if (productRepository.existsByCategoryIdAndName(category.getId(), name)) {
             throw new CustomException(ErrorCode.DUPLICATE_PRODUCT);
         }
-        return productRepository.save(Product.create(category, name, summary, description, thumbnailUrl, published));
+        return productRepository.save(Product.create(category, name, summary, description, thumbnailUrl, detailImages, published));
     }
 
     @Transactional
-    public Product updateProduct(Long productId, String categoryCode, String name, String summary, String description, String thumbnailUrl, boolean published) {
+    public Product createProduct(String categoryCode, String name, String summary, String description, String thumbnailUrl, boolean published) {
+        return createProduct(categoryCode, name, summary, description, thumbnailUrl, List.of(), published);
+    }
+
+    @Transactional
+    public Product updateProduct(Long productId, String categoryCode, String name, String summary, String description, String thumbnailUrl, List<ProductDetailImage> detailImages, boolean published) {
         Product current = getAdminProduct(productId);
         ProductCategory category = getCategoryByCode(categoryCode);
         if (productRepository.existsByCategoryIdAndNameAndIdNot(category.getId(), name, productId)) {
             throw new CustomException(ErrorCode.DUPLICATE_PRODUCT);
         }
-        return productRepository.save(current.update(category, name, summary, description, thumbnailUrl, published));
+        return productRepository.save(current.update(category, name, summary, description, thumbnailUrl, detailImages, published));
     }
 
     @Transactional

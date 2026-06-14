@@ -5,6 +5,8 @@ import or.ecogod.ecogod.domain.product.domain.model.Product;
 import or.ecogod.ecogod.domain.product.domain.model.ProductCategory;
 import or.ecogod.ecogod.domain.product.repository.ProductRepository;
 import or.ecogod.ecogod.infra.persistence.product.entity.ProductJpaEntity;
+import or.ecogod.ecogod.infra.persistence.product.entity.ProductDetailImageJpaValue;
+import or.ecogod.ecogod.domain.product.domain.model.ProductDetailImage;
 import or.ecogod.ecogod.infra.persistence.product.repository.jpa.ProductJpaRepository;
 import or.ecogod.ecogod.infra.persistence.productcategory.entity.ProductCategoryJpaEntity;
 import or.ecogod.ecogod.infra.persistence.productcategory.repository.jpa.ProductCategoryJpaRepository;
@@ -71,6 +73,9 @@ public class ProductRepositoryImpl implements ProductRepository {
                 .summary(product.getSummary())
                 .description(product.getDescription())
                 .thumbnailUrl(product.getThumbnailUrl())
+                .detailImages(product.getDetailImages().stream()
+                        .map(image -> new ProductDetailImageJpaValue(image.key(), image.url(), image.altText(), image.sortOrder()))
+                        .toList())
                 .published(product.isPublished())
                 .build();
     }
@@ -95,6 +100,9 @@ public class ProductRepositoryImpl implements ProductRepository {
                 entity.getSummary(),
                 entity.getDescription(),
                 entity.getThumbnailUrl(),
+                entity.getDetailImages().stream()
+                        .map(image -> new ProductDetailImage(image.getKey(), image.getUrl(), image.getAltText(), image.getSortOrder()))
+                        .toList(),
                 entity.isPublished(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()

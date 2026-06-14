@@ -10,12 +10,17 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.OrderBy;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import or.ecogod.ecogod.infra.persistence.base.BaseJpaEntity;
 import or.ecogod.ecogod.infra.persistence.productcategory.entity.ProductCategoryJpaEntity;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -43,6 +48,11 @@ public class ProductJpaEntity extends BaseJpaEntity {
     @Column(length = 500)
     private String thumbnailUrl;
 
+    @ElementCollection
+    @CollectionTable(name = "product_detail_images", joinColumns = @JoinColumn(name = "product_id"))
+    @OrderBy("sortOrder ASC")
+    private List<ProductDetailImageJpaValue> detailImages = new ArrayList<>();
+
     @Column(nullable = false)
     private boolean published;
 
@@ -54,6 +64,7 @@ public class ProductJpaEntity extends BaseJpaEntity {
             String summary,
             String description,
             String thumbnailUrl,
+            List<ProductDetailImageJpaValue> detailImages,
             boolean published
     ) {
         this.id = id;
@@ -62,6 +73,7 @@ public class ProductJpaEntity extends BaseJpaEntity {
         this.summary = summary;
         this.description = description;
         this.thumbnailUrl = thumbnailUrl;
+        this.detailImages = detailImages == null ? new ArrayList<>() : new ArrayList<>(detailImages);
         this.published = published;
     }
 }

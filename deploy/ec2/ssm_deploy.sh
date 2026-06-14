@@ -33,6 +33,8 @@ DB_NAME_PARAM="${DB_NAME_PARAM:-${SSM_PREFIX}/db/name}"
 DB_USERNAME_PARAM="${DB_USERNAME_PARAM:-${SSM_PREFIX}/db/username}"
 DB_PASSWORD_PARAM="${DB_PASSWORD_PARAM:-${SSM_PREFIX}/db/password}"
 JWT_SECRET_PARAM="${JWT_SECRET_PARAM:-${SSM_PREFIX}/jwt/secret}"
+S3_BUCKET_PARAM="${S3_BUCKET_PARAM:-${SSM_PREFIX}/storage/s3/bucket}"
+S3_PUBLIC_BASE_URL_PARAM="${S3_PUBLIC_BASE_URL_PARAM:-${SSM_PREFIX}/storage/s3/public-base-url}"
 
 mkdir -p "$(dirname "${LOCK_FILE}")" "${RUNTIME_DIR}"
 exec 200>"${LOCK_FILE}"
@@ -154,6 +156,9 @@ rollback() {
     -e APP_TIME_ZONE="Asia/Seoul" \
     -e CORS_ALLOWED_ORIGINS="https://www.ecogod.kr,http://localhost:5173" \
     -e JWT_SECRET="${JWT_SECRET}" \
+    -e APP_S3_REGION="${AWS_REGION}" \
+    -e APP_S3_BUCKET="${APP_S3_BUCKET}" \
+    -e APP_S3_PUBLIC_BASE_URL="${APP_S3_PUBLIC_BASE_URL}" \
     "${previous_image}" >/dev/null
 
   wait_for_health
@@ -166,6 +171,8 @@ LOCAL_DB_NAME="$(get_ssm_parameter "${DB_NAME_PARAM}")"
 LOCAL_DB_USERNAME="$(get_ssm_parameter "${DB_USERNAME_PARAM}")"
 LOCAL_DB_PASSWORD="$(get_ssm_parameter "${DB_PASSWORD_PARAM}" true)"
 JWT_SECRET="$(get_ssm_parameter "${JWT_SECRET_PARAM}" true)"
+APP_S3_BUCKET="$(get_ssm_parameter "${S3_BUCKET_PARAM}")"
+APP_S3_PUBLIC_BASE_URL="$(get_ssm_parameter "${S3_PUBLIC_BASE_URL_PARAM}")"
 
 LOCAL_MAIL_HOST="$(get_ssm_parameter "${MAIL_HOST_PARAM}" 2>/dev/null || printf '%s' 'localhost')"
 LOCAL_MAIL_PORT="$(get_ssm_parameter "${MAIL_PORT_PARAM}" 2>/dev/null || printf '%s' '1025')"
@@ -213,6 +220,9 @@ docker run -d \
   -e APP_TIME_ZONE="Asia/Seoul" \
   -e CORS_ALLOWED_ORIGINS="https://www.ecogod.kr,http://localhost:5173" \
   -e JWT_SECRET="${JWT_SECRET}" \
+  -e APP_S3_REGION="${AWS_REGION}" \
+  -e APP_S3_BUCKET="${APP_S3_BUCKET}" \
+  -e APP_S3_PUBLIC_BASE_URL="${APP_S3_PUBLIC_BASE_URL}" \
   "${IMAGE}" >/dev/null
 
 if ! wait_for_health; then

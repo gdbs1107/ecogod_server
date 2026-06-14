@@ -3,6 +3,7 @@ package or.ecogod.ecogod.api.product.response;
 import or.ecogod.ecogod.domain.product.domain.model.Product;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record ProductResponse(
         Long id,
@@ -13,6 +14,7 @@ public record ProductResponse(
         String summary,
         String description,
         String thumbnailUrl,
+        List<ProductDetailImageResponse> detailImages,
         boolean published,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -27,6 +29,7 @@ public record ProductResponse(
                 product.getSummary(),
                 product.getDescription(),
                 product.getThumbnailUrl(),
+                product.getDetailImages().stream().map(ProductDetailImageResponse::from).toList(),
                 product.isPublished(),
                 product.getCreatedAt(),
                 product.getUpdatedAt()

@@ -6,4 +6,6 @@ import java.io.InputStream;
 
 public interface FileStoragePort {
     StoredFile uploadProductImage(String originalFilename, String contentType, long size, InputStream inputStream);
+
+    void deleteProductImage(String key);
 }

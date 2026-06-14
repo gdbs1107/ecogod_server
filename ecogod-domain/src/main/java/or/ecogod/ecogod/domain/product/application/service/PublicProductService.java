@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import or.ecogod.ecogod.common.exception.CustomException;
+import or.ecogod.ecogod.common.exception.ErrorCode;
 
 @Service
 @RequiredArgsConstructor
@@ -17,5 +19,14 @@ public class PublicProductService {
 
     public List<Product> getProductsByCategorySlug(String categorySlug) {
         return productRepository.findPublishedByCategorySlug(categorySlug);
+    }
+
+    public Product getProduct(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+        if (!product.isPublished()) {
+            throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+        return product;
     }
 }

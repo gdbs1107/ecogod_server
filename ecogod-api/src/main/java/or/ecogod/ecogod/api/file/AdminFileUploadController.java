@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -31,5 +35,14 @@ public class AdminFileUploadController {
                 file.getInputStream()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(FileUploadResponse.from(storedFile)));
+    }
+
+    @DeleteMapping("/products/images")
+    public ResponseEntity<ApiResponse<Void>> deleteProductImage(@Valid @RequestBody FileDeleteRequest request) {
+        adminFileService.deleteProductImage(request.key());
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    public record FileDeleteRequest(@NotBlank String key) {
     }
 }

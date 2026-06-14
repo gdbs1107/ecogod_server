@@ -48,6 +48,7 @@ public class AdminProductController {
                 request.summary(),
                 request.description(),
                 request.thumbnailUrl(),
+                request.detailImages() == null ? List.of() : request.detailImages().stream().map(item -> item.toDomain()).toList(),
                 request.published()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(ProductResponse.from(saved)));
@@ -65,6 +66,7 @@ public class AdminProductController {
                 request.summary(),
                 request.description(),
                 request.thumbnailUrl(),
+                request.detailImages() == null ? List.of() : request.detailImages().stream().map(item -> item.toDomain()).toList(),
                 request.published()
         );
         return ResponseEntity.ok(ApiResponse.success(ProductResponse.from(updated)));
