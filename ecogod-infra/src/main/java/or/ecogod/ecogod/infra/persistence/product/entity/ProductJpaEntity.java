@@ -49,6 +49,11 @@ public class ProductJpaEntity extends BaseJpaEntity {
     private String thumbnailUrl;
 
     @ElementCollection
+    @CollectionTable(name = "product_gallery_images", joinColumns = @JoinColumn(name = "product_id"))
+    @OrderBy("sortOrder ASC")
+    private List<ProductGalleryImageJpaValue> galleryImages = new ArrayList<>();
+
+    @ElementCollection
     @CollectionTable(name = "product_detail_images", joinColumns = @JoinColumn(name = "product_id"))
     @OrderBy("sortOrder ASC")
     private List<ProductDetailImageJpaValue> detailImages = new ArrayList<>();
@@ -64,6 +69,7 @@ public class ProductJpaEntity extends BaseJpaEntity {
             String summary,
             String description,
             String thumbnailUrl,
+            List<ProductGalleryImageJpaValue> galleryImages,
             List<ProductDetailImageJpaValue> detailImages,
             boolean published
     ) {
@@ -73,6 +79,7 @@ public class ProductJpaEntity extends BaseJpaEntity {
         this.summary = summary;
         this.description = description;
         this.thumbnailUrl = thumbnailUrl;
+        this.galleryImages = galleryImages == null ? new ArrayList<>() : new ArrayList<>(galleryImages);
         this.detailImages = detailImages == null ? new ArrayList<>() : new ArrayList<>(detailImages);
         this.published = published;
     }

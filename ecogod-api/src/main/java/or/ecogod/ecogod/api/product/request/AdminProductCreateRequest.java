@@ -13,6 +13,7 @@ public record AdminProductCreateRequest(
         String summary,
         String description,
         String thumbnailUrl,
+        List<@Valid ProductGalleryImageRequest> galleryImages,
         List<@Valid ProductDetailImageRequest> detailImages,
         @NotNull(message = "공개 여부를 선택해 주세요.")
         Boolean published

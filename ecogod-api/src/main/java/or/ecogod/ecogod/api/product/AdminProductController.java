@@ -48,6 +48,7 @@ public class AdminProductController {
                 request.summary(),
                 request.description(),
                 request.thumbnailUrl(),
+                request.galleryImages() == null ? List.of() : request.galleryImages().stream().map(item -> item.toDomain()).toList(),
                 request.detailImages() == null ? List.of() : request.detailImages().stream().map(item -> item.toDomain()).toList(),
                 request.published()
         );
@@ -66,6 +67,7 @@ public class AdminProductController {
                 request.summary(),
                 request.description(),
                 request.thumbnailUrl(),
+                request.galleryImages() == null ? List.of() : request.galleryImages().stream().map(item -> item.toDomain()).toList(),
                 request.detailImages() == null ? List.of() : request.detailImages().stream().map(item -> item.toDomain()).toList(),
                 request.published()
         );

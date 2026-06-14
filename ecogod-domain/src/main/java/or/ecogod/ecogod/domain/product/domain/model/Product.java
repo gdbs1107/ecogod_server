@@ -15,6 +15,7 @@ public class Product {
     private final String summary;
     private final String description;
     private final String thumbnailUrl;
+    private final List<ProductGalleryImage> galleryImages;
     private final List<ProductDetailImage> detailImages;
     private final boolean published;
     private final LocalDateTime createdAt;
@@ -27,6 +28,7 @@ public class Product {
             String summary,
             String description,
             String thumbnailUrl,
+            List<ProductGalleryImage> galleryImages,
             List<ProductDetailImage> detailImages,
             boolean published,
             LocalDateTime createdAt,
@@ -37,7 +39,12 @@ public class Product {
         this.name = normalizeText(name);
         this.summary = normalizeNullable(summary);
         this.description = normalizeNullable(description);
-        this.thumbnailUrl = normalizeNullable(thumbnailUrl);
+        this.galleryImages = normalizeGalleryImages(galleryImages);
+        this.thumbnailUrl = this.galleryImages.stream()
+                .filter(ProductGalleryImage::primary)
+                .findFirst()
+                .map(ProductGalleryImage::url)
+                .orElseGet(() -> normalizeNullable(thumbnailUrl));
         this.detailImages = normalizeDetailImages(detailImages);
         this.published = published;
         this.createdAt = createdAt;
@@ -50,10 +57,11 @@ public class Product {
             String summary,
             String description,
             String thumbnailUrl,
+            List<ProductGalleryImage> galleryImages,
             List<ProductDetailImage> detailImages,
             boolean published
     ) {
-        return new Product(null, category, name, summary, description, thumbnailUrl, detailImages, published, null, null);
+        return new Product(null, category, name, summary, description, thumbnailUrl, galleryImages, detailImages, published, null, null);
     }
 
     public static Product restore(
@@ -63,12 +71,13 @@ public class Product {
             String summary,
             String description,
             String thumbnailUrl,
+            List<ProductGalleryImage> galleryImages,
             List<ProductDetailImage> detailImages,
             boolean published,
             LocalDateTime createdAt,
             LocalDateTime updatedAt
     ) {
-        return new Product(id, category, name, summary, description, thumbnailUrl, detailImages, published, createdAt, updatedAt);
+        return new Product(id, category, name, summary, description, thumbnailUrl, galleryImages, detailImages, published, createdAt, updatedAt);
     }
 
     public Product update(
@@ -77,10 +86,11 @@ public class Product {
             String summary,
             String description,
             String thumbnailUrl,
+            List<ProductGalleryImage> galleryImages,
             List<ProductDetailImage> detailImages,
             boolean published
     ) {
-        return new Product(id, category, name, summary, description, thumbnailUrl, detailImages, published, createdAt, updatedAt);
+        return new Product(id, category, name, summary, description, thumbnailUrl, galleryImages, detailImages, published, createdAt, updatedAt);
     }
 
     private static String normalizeText(String value) {
@@ -98,6 +108,27 @@ public class Product {
         }
         return detailImages.stream()
                 .sorted(Comparator.comparingInt(ProductDetailImage::sortOrder))
+                .toList();
+    }
+
+    private static List<ProductGalleryImage> normalizeGalleryImages(List<ProductGalleryImage> galleryImages) {
+        if (galleryImages == null || galleryImages.isEmpty()) {
+            return List.of();
+        }
+
+        List<ProductGalleryImage> sorted = galleryImages.stream()
+                .sorted(Comparator.comparingInt(ProductGalleryImage::sortOrder))
+                .toList();
+        int primaryIndex = java.util.stream.IntStream.range(0, sorted.size())
+                .filter(index -> sorted.get(index).primary())
+                .findFirst()
+                .orElse(0);
+
+        return java.util.stream.IntStream.range(0, sorted.size())
+                .mapToObj(index -> {
+                    ProductGalleryImage image = sorted.get(index);
+                    return new ProductGalleryImage(image.key(), image.url(), image.altText(), index, index == primaryIndex);
+                })
                 .toList();
     }
 }
